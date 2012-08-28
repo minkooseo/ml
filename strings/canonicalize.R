@@ -2,5 +2,6 @@
 # e.g.) canonical_words("hello world")
 #       canonical_words(c("hello world", "good morning there"))
 canonical_words <- function(w) {
-  return(unlist(lapply(strsplit(w, split=" |/"), tolower)))
+  return(Filter(nchar, Filter(Negate(is.na),  # Remove empty and NA.
+      unlist(lapply(strsplit(w, split=" |/"), tolower)))))  # Delimiter ' ' or /.
 }
