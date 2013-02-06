@@ -16,12 +16,14 @@ replace_factor <- function(df, col_name, old, new) {
 
 # Merge levels of factors. Oftentimes, training data and validation data may have
 # different levels. In such case, merge factor levels.
-# e.g.) x <- merge_factor_levels(train, valid, "colName")
+# e.g.) x <- merge_factor_levels(list(train, valid), "colName")
 #       train <- x[[0]]
 #       valid <- x[[1]]
-merge_factor_levels <- function(train, valid, col_name) {
-  newLevel = unique(c(levels(train[, col_name]), levels(valid[, col_name])))
-  train[, col_name] <- factor(train[, col_name], levels=newLevel)
-  valid[, col_name] <- factor(valid[, col_name], levels=newLevel)
-  return(list(train, valid))
+merge_factor_levels <- function(lst, col_name) {
+  first <- lst[[1]]
+  second <- lst[[2]]
+  newLevel = unique(c(levels(first[, col_name]), levels(second[, col_name])))
+  first[, col_name] <- factor(first[, col_name], levels=newLevel)
+  second[, col_name] <- factor(second[, col_name], levels=newLevel)
+  return(list(first, second))
 }
