@@ -9,22 +9,44 @@ replace_value <- function(df, col_name, old, new) {
 # Replace factor value stored in data frame df's col_name column if existing
 # value is one of old. 'new' will stored.
 # e.g.) data <- replace_factor(data, "my_column", c("goood", "gooood"), "good")
+#
+# See merge_factor_levels_for_df for merging factors for two data frames.
 replace_factor <- function(df, col_name, old, new) {
   levels(df[, col_name])[levels(df[, col_name]) %in% old] <- new
   return(df)
 }
 
-# Merge levels of factors. Oftentimes, training data and validation data may have
-# different levels. In such case, merge factor levels.
-# e.g.) x <- merge_factor_levels(list(train, valid), "colName")
-#       x <- merge_factor_levels(list(train, valid), "colName2")
-#       train <- x[[0]]
-#       valid <- x[[1]]
+# Merge levels of factors for column 'col_name' in lst[[1]] and lst[[2]].
 merge_factor_levels <- function(lst, col_name) {
+  stopifnot(length(lst) == 2)
   first <- lst[[1]]
   second <- lst[[2]]
   newLevel = unique(c(levels(first[, col_name]), levels(second[, col_name])))
   first[, col_name] <- factor(first[, col_name], levels=newLevel)
   second[, col_name] <- factor(second[, col_name], levels=newLevel)
   return(list(first, second))
+}
+
+# Get the factor column names.
+find_factor_columns <- function(df) {
+  return(names(df)[
+    which(sapply(names(df), 
+                 function(colName) { is.factor(df[1, colName]) }))])
+}
+
+# Automatically figure out factor columns and merge their levels.
+# e.g.) Given train and valid data frame, 
+#       x <- merge_factor_levels_for_df(list(train, valid))
+#       train <- x[[1]]
+#       valid <- x[[2]]
+merge_factor_levels_for_df <- function(lst) {
+  stopifnot(length(lst) == 2)
+  # Get factor column names.
+  col_names1 <- find_factor_columns(lst[[1]])
+  col_names2 <- find_factor_columns(lst[[2]])
+  stopifnot(col_names1 == col_names2)
+  for (cn in col_names1) {
+    lst <- merge_factor_levels(lst, cn)
+  }
+  return(lst)
 }
