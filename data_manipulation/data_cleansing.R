@@ -50,3 +50,22 @@ merge_factor_levels_for_df <- function(lst) {
   }
   return(lst)
 }
+
+# Represent factor with multiple columns, so that the number of levels in 
+# each column is small. This is often necessary, for example, in randomForest
+# whose max. number of levels is 32.
+#
+# For this, this function converts factor as numeric, and then re-represents it
+# as base max_levels digits. Each digit becomes new columns.
+# e.g.) x <- data.frame(v=as.factor(c(1, 2, 3, 4, 5)))
+#       x <- split_factor_to_columns(x, 'v', 2)
+split_factor_to_columns <- function(df, col_name, max_levels) {
+  values <- as.numeric(df[, col_name])
+  idx <- 1
+  while(any(values > 0)) {
+    df[, paste0(col_name, idx)] <- as.factor(values %% max_levels)
+    values <- values %/% max_levels
+    idx <- idx + 1
+  }
+  return(df)
+}
