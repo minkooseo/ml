@@ -60,7 +60,7 @@ merge_factor_levels_for_df <- function(lst) {
 # e.g.) x <- data.frame(v=as.factor(c(1, 2, 3, 4, 5)))
 #       x <- split_factor_to_columns(x, 'v', 2)
 split_factor <- function(df, col_name, max_levels, 
-                         craete_as_factor=TRUE, drop_original=FALSE) {
+                         create_as_factor=TRUE, drop_original=FALSE) {
   values <- as.numeric(df[, col_name])
   idx <- 1
   nlevels <- nlevels(df[, col_name])
