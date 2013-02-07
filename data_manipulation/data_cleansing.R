@@ -59,12 +59,18 @@ merge_factor_levels_for_df <- function(lst) {
 # as base max_levels digits. Each digit becomes new columns.
 # e.g.) x <- data.frame(v=as.factor(c(1, 2, 3, 4, 5)))
 #       x <- split_factor_to_columns(x, 'v', 2)
-split_factor <- function(df, col_name, max_levels, drop_original=FALSE) {
+split_factor <- function(df, col_name, max_levels, 
+                         craete_as_factor=TRUE, drop_original=FALSE) {
   values <- as.numeric(df[, col_name])
   idx <- 1
   nlevels <- nlevels(df[, col_name])
   while(nlevels > 0) {
-    df[, paste0(col_name, idx)] <- as.factor(values %% max_levels)
+    new_values <- values %% max_levels
+    if (create_as_factor) {
+      df[, paste0(col_name, idx)] <- as.factor(values %% max_levels)
+    } else {
+      df[, paste0(col_name, idx)] <- values %% max_levels
+    }
     values <- values %/% max_levels
     nlevels <- nlevels %/% max_levels
     idx <- idx + 1
@@ -76,9 +82,21 @@ split_factor <- function(df, col_name, max_levels, drop_original=FALSE) {
 }
 
 # Same with split_factor, but perform it for the vector of column names.
-split_multiple_factors <- function(df, col_names, max_levels, drop_original=FALSE) {
+split_multiple_factors <- function(df, col_names, max_levels, 
+                                   create_as_factor=TRUE, drop_original=FALSE) {
   for (cn in col_names) {
-    df <- split_factor(df, cn, max_levels, drop_original)
+    df <- split_factor(df, cn, max_levels, create_as_factor, drop_original)
+  }
+  return(df)
+}
+
+# Sort factor level. This is useful when used in combination with split_factor or
+# split_multiple_factors. If levels are sorted, it's likely that similarly named
+# levels appear closely when new columns are created as numeric, i.e., 
+# create_as_factor=FALSE.
+sort_factor_levels <- function(df, col_names) {
+  for (cn in col_names) {
+    df[, cn] <- factor(df[, cn], levels=sort(levels(df[, cn])))
   }
   return(df)
 }
