@@ -100,3 +100,13 @@ sort_factor_levels <- function(df, col_names) {
   }
   return(df)
 }
+
+
+# Fill in NA value in data$col_name, with the default_value.
+fill_in_na <- function(data, col_name, default_value) {
+  data[, col_name] <- ifelse(
+    is.na(data[, col_name]),
+    default_value,
+    data[, col_name])
+  return(data)
+}
