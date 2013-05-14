@@ -8,7 +8,7 @@ load_json <- function(fname) {
 
 # Converts an array within the list returned by load_json() into data frame.
 # If json file contains array, say, { "key": ["a1", "a2"] }, it won't be easily converted to
-# data frame by json_to_data_frame(). 
+# data frame by json_to_data_frame().
 #
 # Therefore, one can use this function to get array data as separate data frame. When needed,
 # the data frame can be merged with the output from json_to_data_frame().
@@ -32,7 +32,7 @@ json_array_to_data_frame<- function(json_data, id_name, array_name) {
   }
 }
 
-# Converts the output of load_json to data frame. Because json objects can be 
+# Converts the output of load_json to data frame. Because json objects can be
 # nested, each row is converted data frame first, and then rbind-ed. In each element of
 # json_data, elements whose name appear in columns_to_exclude won't be included
 # in the final data frame. This is useful if you want to exclude arrays when generating
@@ -53,5 +53,3 @@ json_to_data_frame <- function(json_data,
     as.data.frame(x[columns_to_select])
   })))
 }
-
-z <- json_to_data_frame(data.business, c("categories", "neighborhoods"))
