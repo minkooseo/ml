@@ -1,5 +1,7 @@
 library(foreach)
+library(plyr)
 library(rjson)
+library(data.table)
 
 load_json <- function(fname) {
   return(fromJSON(
@@ -46,10 +48,18 @@ json_array_to_data_frame<- function(json_data, id_name, array_name) {
 #         '{ "id": 2, "ary": ["b1", "a2"], "score": 30 }]'))
 # df <- json_to_data_frame(json_data, c("ary"))
 json_to_data_frame <- function(json_data,
-                               columns_to_exclude=c()) {
-  return(do.call(rbind, lapply(json_data, function(x) {
-    columns_to_select <- Filter(function(x) { !(x %in% columns_to_exclude) },
-                                names(x))
-    as.data.frame(x[columns_to_select])
-  })))
+                               columns_to_exclude=c(),
+                               ...) {
+  rows <- llply(json_data, function(x) {
+    if (length(columns_to_exclude) > 0) {
+      columns_to_select <- Filter(function(x) { !(x %in% columns_to_exclude) },
+                                  names(x))
+      return(as.data.frame(x[columns_to_select], stringsAsFactors=FALSE))
+    } else {
+      return(as.data.frame(x, stringsAsFactors=FALSE))
+    }
+  }, 
+  ...)
+  # do.call(rbind, rows) is terribly slow compared to data.table's rbindlist.
+  return(as.data.frame(rbindlist(rows)))
 }
