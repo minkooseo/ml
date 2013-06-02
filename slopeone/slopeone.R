@@ -1,6 +1,6 @@
-library(data.table)
-library(plyr)
-library(reshape2)
+require(data.table)
+require(plyr)
+require(reshape2)
 
 # Build slope one model.
 #
@@ -12,6 +12,9 @@ library(reshape2)
 # A data table of (item_id1, item_id2, b) where b represents the average rating
 # difference of 'item 2 rating' - 'item 1 rating'.
 build_slopeone <- function(ratings, ...) {
+  if (NROW(ratings) == 0) {
+    return(data.table())
+  }
   ratings <- ratings[, c('user_id', 'item_id', 'rating')]
   # Generates all pairs of (item id 1, item id 2, diff) if both of item 1 and
   # 2 is rated by the same user.
@@ -28,27 +31,26 @@ build_slopeone <- function(ratings, ...) {
     }
   }, ...)
   # Compute average score diff between item 1 and item 2.
-  item_id_pair_and_b <- data.table(
+  model <- data.table(
       ddply(score_diff_per_user, 
             .(item_id1, item_id2), 
             summarize,
             b=mean(diff), support=NROW(diff)))
-  setkey(item_id_pair_and_b, item_id1, item_id2)
-  return(item_id_pair_and_b)
+  setkey(model, item_id1, item_id2)
+  return(model)
 }
 
 # Predict score for target_item_id given ratings of (item_id, rating).
 #
 # Params:
-# item_id_pair_and_b: A data table produced by build_slopeone. This contains
+# model: A data table produced by build_slopeone. This contains
 #   (item id 1, item id 2, b).
 # target_item_id: Target item id to predict rating.
 # ratings: A data table containing (item id, rating) of the user.
 #
 # Returns:
 # Predicted rating score.
-
-predict_slopeone <- function(item_id_pair_and_b, target_item_id, ratings) {
+predict_slopeone <- function(model, target_item_id, ratings) {
   # If target_id is already rated by the user, return that rating.
   already_rated <- subset(ratings, ratings$item_id == target_item_id)
   if (NROW(already_rated) == 1) {
@@ -60,16 +62,16 @@ predict_slopeone <- function(item_id_pair_and_b, target_item_id, ratings) {
   # Compute average ratings.
   ratings <- rename(ratings, c('item_id'= "item_id1"))
   ratings <- cbind(ratings, item_id2=target_item_id)
-  browser()
-  return(item_id_pair_and_b[ratings, mean(rating + b)])
+  setkey(ratings, item_id1, item_id2)
+  return(mean(model[ratings, b+rating]$V1, na.rm=TRUE))
 }
 
-model <- data.table(data.frame(
-  item_id1=c('A', 'B', 'C'),
-  item_id2=c('a', 'b', 'c'),
-  diff=c(1, 2, 3),
-  stringsAsFactors=FALSE))
-setkey(model, item_id1, item_id2)
-
-predict_slopeone(model,
-  'b', data.frame(item_id=c('B', 'C'), rating=c(1, 2)))
+demo <- function() {
+  model <- build_slopeone(data.frame(
+    user_id=c('u1', 'u1', 'u1', 'u2', 'u2'),
+    item_id=c('i1', 'i2', 'i3', 'i1', 'i4'),
+    rating=c(3, 4, 5, 2, 4)))
+  
+  predict_slopeone(model,
+    'i2', data.table(data.frame(item_id=c('i1', 'i4'), rating=c(4, 4))))
+}
