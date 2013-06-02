@@ -13,13 +13,17 @@ require(reshape2)
 # difference of 'item 2 rating' - 'item 1 rating'.
 build_slopeone <- function(ratings, ...) {
   if (NROW(ratings) == 0) {
-    return(data.table())
+    return(data.table(data.frame(item_id1=c(), item_id2=c(), b=c(), support=c())))
   }
   ratings <- ratings[, c('user_id', 'item_id', 'rating')]
   # Generates all pairs of (item id 1, item id 2, diff) if both of item 1 and
   # 2 is rated by the same user.
   score_diff_per_user <- ddply(ratings, .(user_id), function(rows) {
-    if (NROW(rows) > 2) {
+    if (NROW(rows) > 1) {
+      # A user may have rated an item multiple times. In such case, get average ratings 
+      # for such items.
+      rows <- unique(ddply(rows, .(item_id), transform, rating=mean(rating)))  
+      # Compute diff of every pair of items.
       pair_rows_nums <- subset(
           expand.grid(rows_num1=1:NROW(rows), rows_num2=1:NROW(rows)),
           rows_num1 != rows_num2)
