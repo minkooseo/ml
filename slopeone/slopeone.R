@@ -38,7 +38,8 @@ build_slopeone <- function(ratings, ...) {
       ddply(score_diff_per_user, 
             .(item_id1, item_id2), 
             summarize,
-            b=mean(diff), support=NROW(diff)))
+            b=mean(diff), support=NROW(diff),
+            ...))
   setkey(model, item_id1, item_id2)
   return(model)
 }
