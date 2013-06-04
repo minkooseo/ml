@@ -5,7 +5,7 @@ require(reshape2)
 # Build slope one model.
 #
 # Params:
-# ratings: A data frame containing (user_id, item_id, stars).
+# ratings: A data frame containing (user_id, item_id, rating).
 # ...: Options for ddply.
 #
 # Returns:
@@ -15,7 +15,6 @@ build_slopeone <- function(ratings, ...) {
   if (NROW(ratings) == 0) {
     return(data.table(data.frame(item_id1=c(), item_id2=c(), b=c(), support=c())))
   }
-  ratings <- ratings[, c('user_id', 'item_id', 'rating')]
   # Generates all pairs of (item id 1, item id 2, diff) if both of item 1 and
   # 2 is rated by the same user.
   score_diff_per_user <- ddply(ratings, .(user_id), function(rows) {
