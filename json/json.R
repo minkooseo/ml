@@ -20,14 +20,14 @@ load_json <- function(fname) {
 #   paste('[{ "id": 1, "ary": ["a1", "a2"], "score": 20},',
 #         '{ "id": 2, "ary": ["b1", "a2"], "score": 30 }]'))
 # ary_frame <- json_array_to_data_frame(json_data, "id", "ary")
-json_array_to_data_frame<- function(json_data, id_name, array_name) {
+json_array_to_data_frame<- function(json_data, id_name, array_name, should_unstack) {
   key_to_value <- adply(json_data, 1, function(x) {
     # Convert to data frame containing (key, variable name, 1).
     adply(x[[array_name]], 1, function(varname) {
         data.frame(id_name=x[[id_name]], varname, value=1)
     })
   }, .parallel=FALSE)
-  if (NROW(key_to_value) > 0) {
+  if (NROW(key_to_value) > 0 && should_unstack) {
     return(dcast(key_to_value, id_name ~ varname, fill=0))
   } else {
     return(data.frame())
