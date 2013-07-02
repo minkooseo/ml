@@ -110,3 +110,22 @@ fill_in_na <- function(data, col_name, default_value) {
     data[, col_name])
   return(data)
 }
+
+# Given a data frame, make all columns fixed length strings and split each
+# letter as separate columns.
+# > x <- data.frame(x=c("abc", "def"),
+# +                 y=c("012", "34"),
+# +                 stringsAsFactors=FALSE)
+# > split_letters_to_columns(x, pad='0')
+# [,1] [,2] [,3] [,4] [,5] [,6]
+# [1,] "a"  "b"  "c"  "0"  "1"  "2" 
+# [2,] "d"  "e"  "f"  "0"  "3"  "4" 
+split_letters_to_columns <- function(df, pad='0') {
+  df <- lapply(df, function(x) {
+    str_pad(x, max(nchar(x)), pad=pad)
+  })
+  do.call(cbind,
+          lapply(df, 
+                 function(col) {
+                   do.call(rbind, str_split(col, pattern=""))[, -1]}))
+}
