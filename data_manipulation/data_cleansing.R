@@ -90,10 +90,10 @@ split_multiple_factors <- function(df, col_names, max_levels,
   return(df)
 }
 
-# Sort factor level. This is useful when used in combination with split_factor or
+# Sort factor level. This is useful preprocessing for split_factor or
 # split_multiple_factors. If levels are sorted, it's likely that similarly named
-# levels appear closely when new columns are created as numeric, i.e., 
-# create_as_factor=FALSE.
+# levels may mean something very similar. Therefore, sorting factor level will result
+# in similar value in splitted columns added by split_factor or split_multiple_factors.
 sort_factor_levels <- function(df, col_names) {
   for (cn in col_names) {
     df[, cn] <- factor(df[, cn], levels=sort(levels(df[, cn])))
@@ -101,6 +101,22 @@ sort_factor_levels <- function(df, col_names) {
   return(df)
 }
 
+# Remove levels from factor 'data' if occurrences of the levels are not within top n.
+# Decision tree algorithms suffer from large number of factors as tree algorithms
+# need to consider 2^(num level - 1) partitions of levels in each node split. 
+# Therefore, it may be useful to reduce the number of factors while keepting 
+# the top n most frequent levels. This function replace factor level for low 
+# occurrence factor levels.
+#
+# e.g.)
+# > levels(remove_low_cnt_factor_level(iris[1:125, ]$Species, 2, 'low'))
+# [1] "setosa"     "versicolor" "low"       
+remove_low_cnt_factor_level <- function(data, top_n, replace_val) {
+  low_cnt <- names(sort(-table(data)))
+  low_cnt <- low_cnt[(top_n + 1):NROW(low_cnt)]
+  levels(data)[levels(data) %in% low_cnt] <- replace_val
+  return(data)
+}
 
 # Fill in NA value in data$col_name, with the default_value.
 fill_in_na <- function(data, col_name, default_value) {
@@ -113,6 +129,7 @@ fill_in_na <- function(data, col_name, default_value) {
 
 # Given a data frame, make all columns fixed length strings and split each
 # letter as separate columns.
+# e.g.)
 # > x <- data.frame(x=c("abc", "def"),
 # +                 y=c("012", "34"),
 # +                 stringsAsFactors=FALSE)
