@@ -127,11 +127,11 @@ fill_in_na <- function(data, col_name, default_value) {
 # [,1] [,2] [,3] [,4]
 # [1,] "ab" "bc" "01" "12"
 # [2,] "de" "ef" "Z3" "34"
-split_letters_to_ngram_columns <- function(df, n, pad='0') {
+split_letters_to_ngram_columns <- function(df, n, pad='0', colname_prefix) {
   df <- lapply(df, function(x) {
     str_pad(x, max(nchar(x)), pad=pad)
   })
-  do.call(cbind,
+  df <- do.call(cbind,
       lapply(df,
              function(col) {
                do.call(cbind,
@@ -139,6 +139,9 @@ split_letters_to_ngram_columns <- function(df, n, pad='0') {
                          substr(col, i, i + n - 1)
                        })
              }))
+  df <- as.data.frame(df)
+  names(df) <- paste0(colname_prefix, 1:ncol(df))
+  return(df)
 }
 
 # Convert a factor to multiple columns so that each column has less than 32 levels.
