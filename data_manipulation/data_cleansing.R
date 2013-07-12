@@ -59,33 +59,20 @@ merge_factor_levels_for_df <- function(lst) {
 # as base max_levels digits. Each digit becomes new columns.
 # e.g.) x <- data.frame(v=as.factor(c(1, 2, 3, 4, 5)))
 #       x <- split_factor_to_columns(x, 'v', 2)
-split_factor <- function(df, col_name, max_levels, 
-                         create_as_factor=TRUE, drop_original=FALSE) {
+split_factor_by_base32 <- function(
+  df, col_name, max_levels, drop_original=FALSE) {
   values <- as.numeric(df[, col_name])
   idx <- 1
   nlevels <- nlevels(df[, col_name])
   while(nlevels > 0) {
     new_values <- values %% max_levels
-    if (create_as_factor) {
-      df[, paste0(col_name, idx)] <- as.factor(values %% max_levels)
-    } else {
-      df[, paste0(col_name, idx)] <- values %% max_levels
-    }
+    df[, paste0(col_name, idx)] <- as.factor(values %% max_levels)
     values <- values %/% max_levels
     nlevels <- nlevels %/% max_levels
     idx <- idx + 1
   }
   if (drop_original) {
     df <- df[, !(names(df) %in% c(col_name))]
-  }
-  return(df)
-}
-
-# Same with split_factor, but perform it for the vector of column names.
-split_multiple_factors <- function(df, col_names, max_levels, 
-                                   create_as_factor=TRUE, drop_original=FALSE) {
-  for (cn in col_names) {
-    df <- split_factor(df, cn, max_levels, create_as_factor, drop_original)
   }
   return(df)
 }
@@ -145,4 +132,72 @@ split_letters_to_columns <- function(df, pad='0') {
           lapply(df, 
                  function(col) {
                    do.call(rbind, str_split(col, pattern=""))[, -1]}))
+}
+
+# Convert a factor to multiple columns so that each column has less than 32 levels.
+# Column to store factor value is decided by factor_placement. If it's 'decreasing',
+# the 32 most frequent factors will be stored in the first columns. Next 32 frequent
+# will be stored in the second column, and so on. If it's 'roundrobin', most
+# frequent factor will be stored in the first column. Second frequent factor will be
+# stored to the second column. This continues until the last column is met. In such
+# case, we start over from the first column to store remaining factor levels.
+#
+# Factors whose frequency is less than min_cnt_threshold will be replaced by a new
+# factor level, 'replace_val'.
+#
+# Return value is a list containig df(columns created by factor) and col_idx_map(
+# vector containing the column index of each factor level). col_idx is useful
+# when there's necessity to convert the factor in the test data in the same way done 
+# for training data. See split_factor_by_col_idx_map() for this purpose.
+split_factor_by_cnt <- function(f, min_cnt_threshold, replace_val, colname_prefix,
+                                factor_placement=c("decreasing", "roundrobin")) {
+  factor_placement <- match.arg(factor_placement)
+  max_levels_per_column <- 31  # 1 level is reserved for replace_val.
+  cnt <- sort(-table(f))
+  cnt <- -cnt
+  cnt <- cnt[which(cnt > min_cnt_threshold)]
+  num_split_cols <- ceiling(NROW(cnt) / max_levels_per_column) 
+  m <- matrix(replace_val, 
+              ncol=num_split_cols, 
+              nrow=NROW(f))
+  col_idx_map <- rep(0, nlevels(f))
+  for(i in 1:NROW(f)) {
+    # Figure out the ranking of f[i]
+    ranking_of_value <- which(names(cnt) == f[i])
+    if (NROW(ranking_of_value) != 0) {
+      # Factor w/ count more than min_cnt_threshold.
+      if (factor_placement == "roundrobin") {
+        col_idx <- (ranking_of_value %% num_split_cols) + 1
+      } else {  # decreasing
+        col_idx <- ceiling(ranking_of_value / max_levels_per_column)
+      }
+      m[i, col_idx] <- levels(f)[f[i]]
+      col_idx_map[as.numeric(f[i])] <- col_idx
+    } else {
+      # Factor w/ count less than min_cnt_threshold.
+      col_idx_map[as.numeric(f[i])] <- 0
+    }
+  }
+  df <- data.frame(m)
+  names(df) <- paste0(colname_prefix, 1:ncol(df))
+  return(list(df=df, col_idx_map=col_idx_map))
+}
+
+# Split factor into multiple columns using col_idx_map which contains mapping between
+# factor level and column index to store the factor value. col_idx_map is generated 
+# by split_factor_by_cnt, and this function is useful to apply the same split logic 
+# to test data after splitting factor for training data using split_factor_by_cnt().
+#
+# After applying this function, it will be necessary to run merge_factor_levels() to 
+# new columns of train and test so that factor levels are matched. Otherwise,
+# ML algorithms may throw an error complaining that factor level are not matched.
+split_factor_by_col_idx_map <- function(f, col_idx_map, replace_val, colname_prefix) {
+  m <- matrix(replace_val, ncol=max(col_idx_map), nrow=NROW(f))
+  for(i in 1:NROW(f)) {
+    col_idx <- col_idx_map[as.numeric(f[i])]
+    m[i, col_idx] <- levels(f)[f[i]]
+  }
+  df <- data.frame(m)
+  names(df) <- paste0(colname_prefix, 1:ncol(df))
+  return(df)
 }
