@@ -1,3 +1,6 @@
+require(foreach)
+require(stringr)
+
 # Replace value stored in data frame df's col_name column with new if existing
 # value matches any value in old.
 # e.g.) data <- replace_value(data, "my_column", c("not found", "unknown"), NA)
@@ -115,23 +118,27 @@ fill_in_na <- function(data, col_name, default_value) {
 }
 
 # Given a data frame, make all columns fixed length strings and split each
-# letter as separate columns.
+# column into columns of n-gram.
 # e.g.)
-# > x <- data.frame(x=c("abc", "def"),
-# +                 y=c("012", "34"),
-# +                 stringsAsFactors=FALSE)
-# > split_letters_to_columns(x, pad='0')
-# [,1] [,2] [,3] [,4] [,5] [,6]
-# [1,] "a"  "b"  "c"  "0"  "1"  "2" 
-# [2,] "d"  "e"  "f"  "0"  "3"  "4" 
-split_letters_to_columns <- function(df, pad='0') {
+# > df <- data.frame(x=c("abc", "def"),
+# +                  y=c("012", "34"),
+# +                  stringsAsFactors=FALSE)
+# > split_letters_to_ngram_columns(df, 2, pad='Z')
+# [,1] [,2] [,3] [,4]
+# [1,] "ab" "bc" "01" "12"
+# [2,] "de" "ef" "Z3" "34"
+split_letters_to_ngram_columns <- function(df, n, pad='0') {
   df <- lapply(df, function(x) {
     str_pad(x, max(nchar(x)), pad=pad)
   })
   do.call(cbind,
-          lapply(df, 
-                 function(col) {
-                   do.call(rbind, str_split(col, pattern=""))[, -1]}))
+      lapply(df,
+             function(col) {
+               do.call(cbind,
+                       foreach(i=1:(nchar(col[1]) - n + 1)) %do% {
+                         substr(col, i, i + n - 1)
+                       })
+             }))
 }
 
 # Convert a factor to multiple columns so that each column has less than 32 levels.
