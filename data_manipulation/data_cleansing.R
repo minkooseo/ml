@@ -211,3 +211,9 @@ split_factor_by_col_idx_map <- function(f, col_idx_map, replace_val, colname_pre
   names(df) <- paste0(colname_prefix, 1:ncol(df))
   return(df)
 }
+
+# Remove columns from a data fram if column name starts with the given prefix.
+# e.g) str(remove_column_with_prefix(iris, 'Petal'))
+remove_column_with_prefix <- function(df, prefix) {
+  return(df[, is.na(as.vector(str_match(colnames(df), paste0("^", prefix))))])
+}
