@@ -205,7 +205,9 @@ split_factor_by_col_idx_map <- function(f, col_idx_map, replace_val, colname_pre
   m <- matrix(replace_val, ncol=max(col_idx_map), nrow=NROW(f))
   for(i in 1:NROW(f)) {
     col_idx <- col_idx_map[as.numeric(f[i])]
-    m[i, col_idx] <- levels(f)[f[i]]
+    if (!is.na(col_idx)) {
+      m[i, col_idx] <- levels(f)[f[i]]
+    }
   }
   df <- data.frame(m)
   names(df) <- paste0(colname_prefix, 1:ncol(df))
