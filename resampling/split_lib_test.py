@@ -16,7 +16,7 @@ class SplitLibTest(unittest.TestCase):
         writer.writerow(('A', 'foo'))
         writer.writerow(('A', 'foo'))
         tf.flush()
-        actual = split_lib.GroupByLabel(tf.name, 0)
+        actual = split_lib.GroupByLabel(tf.name, 0, False)
         expected = {'A': [0, 2, 3], 'B': [1]}
         self.assertEquals(expected.keys(), actual.keys())
         for k in expected.keys():
@@ -83,13 +83,20 @@ class SplitLibTest(unittest.TestCase):
 
     def testGetOutputFilename(self):
         self.assertListEqual(
-            ['foo-1-of-2.csv', 'foo-2-of-2.csv'],
+            ['foo-0-of-2.csv', 'foo-1-of-2.csv'],
             split_lib.GetOutputFilenames('foo.csv', 2))
         self.assertListEqual(
-            ['/bar/bat/foo-1-of-3.csv',
-             '/bar/bat/foo-2-of-3.csv',
-             '/bar/bat/foo-3-of-3.csv'],
+            ['/bar/bat/foo-0-of-3.csv',
+             '/bar/bat/foo-1-of-3.csv',
+             '/bar/bat/foo-2-of-3.csv'],
             split_lib.GetOutputFilenames('/bar/bat/foo.csv', 3))
+        self.assertListEqual(
+            ['foo-00-of-10.csv', 'foo-01-of-10.csv',
+             'foo-02-of-10.csv', 'foo-03-of-10.csv',
+             'foo-04-of-10.csv', 'foo-05-of-10.csv',
+             'foo-06-of-10.csv', 'foo-07-of-10.csv',
+             'foo-08-of-10.csv', 'foo-09-of-10.csv'],
+            split_lib.GetOutputFilenames('foo.csv', 10))
 
 
 if __name__ == '__main__':

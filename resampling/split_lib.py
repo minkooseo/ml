@@ -63,6 +63,10 @@ def GetOutputFilenames(input_filepath, num_files):
     basename = os.path.basename(input_filepath)
     fname = ''.join(basename.split('.')[:-1])
     ext = basename.split('.')[-1]
-    return [os.path.join(os.path.dirname(input_filepath),
-                         '%s-%d-of-%d.%s' % (fname, i, num_files, ext))
-            for i in xrange(1, num_files + 1)]
+    num_digits = int(math.log10(num_files)) + 1
+    return [
+        os.path.join(
+            os.path.dirname(input_filepath),
+            ('{0}-{1:0%dd}-of-{2:0%dd}.{3}' % (num_digits, num_digits)).format(
+                fname, i, num_files, ext))
+        for i in xrange(0, num_files)]
