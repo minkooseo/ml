@@ -22,5 +22,3 @@ def GetFilepathWithSuffix(data_filepath, suffix, ext):
     return os.path.join(
         os.path.dirname(data_filepath),
         filename + '-%s.%s' % (suffix, ext))
-
-
